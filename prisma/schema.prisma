@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum Goal {
+  lose
+  maintain
+  gain
+}
+
+enum ActivityLevel {
+  sedentary
+  light
+  moderate
+  high
+  veryHigh
+}
+
+enum PendingStatus {
+  awaitingGrams
+  awaitingConfirmation
+}
+
+// Профиль пользователя. id = telegram_id.
+model User {
+  id            BigInt        @id
+  gender        Gender
+  age           Int
+  height        Int // см
+  weight        Float // кг
+  targetWeight  Float?
+  goal          Goal
+  activityLevel ActivityLevel
+  dailyCalories Int
+  dailyProtein  Int
+  dailyFat      Int
+  dailyCarbs    Int
+  createdAt     DateTime      @default(now())
+
+  meals        Meal[]
+  pendingMeals PendingMeal[]
+}
+
+// Подтверждённый приём пищи.
+model Meal {
+  id          Int      @id @default(autoincrement())
+  userId      BigInt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  description String
+  calories    Int
+  protein     Int
+  fat         Int
+  carbs       Int
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Staging для флоу подтверждения/уточнения в боте (serverless-friendly состояние).
+model PendingMeal {
+  id           Int           @id @default(autoincrement())
+  userId       BigInt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  description  String
+  calories     Int?
+  protein      Int?
+  fat          Int?
+  carbs        Int?
+  imageUrl     String?
+  detectedDish String?
+  status       PendingStatus
+  createdAt    DateTime      @default(now())
+
+  @@index([userId])
+}
